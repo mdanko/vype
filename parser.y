@@ -189,12 +189,6 @@ int main(int argc, char **argv)
 	scope.push_back(global);
 	sTable = &scope.front()->func.symbols;
 
-	symbol *s = new symbol;
-	s->name = "aaaa";
-	s->type = SID;
-	s->dataType = INIT;
-	sTable->push_back(s);
-
 	yyparse();
 
 	printSTable(&scope.front()->func.symbols);

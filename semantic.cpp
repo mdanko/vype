@@ -19,7 +19,10 @@ void printSTable(deque<symbol*> *table)
 	for (deque<symbol*>::iterator id=table->begin(); id!=table->end(); ++id)
 	{
 		cout << "*** NAME:" << (*id)->name << " TYPE:" <<  (*id)->type << " DATATYPE:" <<  (*id)->dataType << endl;
-	}	
+		if ((*id)->dataType == SFUNC)
+			printSTable(&(*id)->func.symbols);
+	}
+	cout << "END OF TABLE" << endl;
 }
 
 /* Identificator */
@@ -236,10 +239,10 @@ symbol* addExpr(symbol *expr1, symbol *expr2, int op)
 		case ODIV:
 		case OMOD: 
 		case OAND:
-		case OOR:  if (expr1->type != DINT || expr2->type != DINT)
+		case OOR:  if (expr1->dataType != DINT || expr2->dataType != DINT)
 				   {
 				   	 // error 
-				   	cout << "**************ERROR1*****************" << endl;
+				   	cout << "**************ERROR1*****************"<< endl;
 				   }						
 					break;
 		case OLT:
@@ -247,7 +250,7 @@ symbol* addExpr(symbol *expr1, symbol *expr2, int op)
 		case OGT:
 		case OGTE:
 		case OEQ:  
-		case ONEQ: if (expr1->type != expr2->type)
+		case ONEQ: if (expr1->dataType != expr2->dataType)
 				   {
 				   	 // error
 				   	cout << "**************ERROR1*****************" << endl;
