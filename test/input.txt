@@ -1,0 +1,18 @@
+int identifikator;
+char znak;
+int cislo, cislo2;
+
+char func(int);
+void f(int,char,int);
+
+char func(int a)
+{
+	string message;
+}
+
+void f(int a, char z, int b)
+{
+	
+}
+
+cislo = cislo2 + 5;

@@ -1,0 +1,32 @@
+int identifikator;
+char znak;
+int cislo;
+int cislo2;
+
+char func(int);
+int f(int);
+
+cislo = 5;
+
+cislo2 = (2 * cislo ) + 5;
+
+if (a == 0)
+{ 
+	cislo = 1;
+}
+else
+{
+	cislo = 2;
+}
+
+int f(int a)
+{
+	return 2*a;
+}
+
+char func(int a)
+{
+	cislo = 7;
+
+	return (char)(cislo + f(cislo));
+}
