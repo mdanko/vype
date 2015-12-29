@@ -67,42 +67,9 @@ void count();
 ","                     return TOKEN(TCOM);
 ";"						return TOKEN(TSEMICOL);
 
-.                       printf("Unknown token!\n"); yyerror();
+.                      { setError(ELEX, "Read invalid character"); }
 
 %%
-
-/*int main(int argc, char **argv) 
-{
-	ofstream outFile;
-
-	if (argc < 1 || argc >= 3)
-	{
-		return 1;
-	}
-
-	printf("%s %s\n", argv[1], argv[2]);
-	yyin = fopen (argv[1], "rw");
-
-	if (argc == 1)
-	{
-		outFile.open("out.asm");
-	}
-	else outFile.open(argv[2]);
-
-	int tok;
-
-	while(1) 
-	{
-		tok = yylex();
-		printf("%d ", tok);
-		
-		if (tok == TID || tok == TINT || tok == TDOUBLE || tok == TCHAR || tok == TSTRING) cout << *yylval.literal << endl; 
-		else cout << yylval.token << endl;
-		//printf("\n");
-	}
-
-	return 0;
-}*/
 
 void blockComment()
 {

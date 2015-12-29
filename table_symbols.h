@@ -24,7 +24,7 @@ struct func_info
 {
 	// var_info retval;  		default vals ... ival = 0, cval = '\0', sval = ""
 	bool isDefined;
-	deque<int> argTypes;
+	deque<DataType> argTypes;
 	deque<symbol*> symbols;
 };
 
@@ -40,8 +40,8 @@ struct var_info
 struct symbol
 {
 	string name;
-    int type;		// ID/FUNC
-    int dataType;	// int/char/string (id type/func return type)
+    SymType type;		// ID/FUNC
+    DataType dataType;	// int/char/string (id type/func return type)
     var_info var;
     func_info func;
 };

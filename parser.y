@@ -14,7 +14,7 @@
     extern int yylineno;
     extern char *yytext;
 
-    void yyerror(const char *s) { printf("%d: %s at %s\n", yylineno, s, yytext); }
+    void yyerror(const char *s) { setError(ESYN, "Syntactic error"); }
 %}
 
 %union {
@@ -24,7 +24,7 @@
     string *sval;
     int token;
 
-    int dtval;
+    DataType dtval;
     symbol *eval;
 }
 
@@ -179,20 +179,32 @@ while : TKEY_WHILE TLPAR expr TRPAR				{ addWhile($3); }
 int main(int argc, char **argv) 
 {
 	ofstream outFile;
+	error = EOK;
 
-	if (argc < 1 || argc >= 3)
+	if (argc < 2 || argc > 3)
 	{
-		return 1;
+		setError(EINT, "Wrong number of arguments");
+		return error;
 	}
 
-	printf("%s %s\n", argv[1], argv[2]);
-	yyin = fopen (argv[1], "rw");
+	if (!(yyin = fopen (argv[1], "r")))
+	{
+		setError(EINT, "Cannot open input file");
+		return error;	
+	}
 
-	if (argc == 1)
+	if (argc == 2)
 	{
 		outFile.open("out.asm");
 	}
 	else outFile.open(argv[2]);
+
+	if (!outFile)
+	{
+		setError(EINT, "Cannot open output file");
+		fclose(yyin);
+		return error;		
+	}
 
 	extern int yydebug;
 	//yydebug = 1;
@@ -208,5 +220,8 @@ int main(int argc, char **argv)
 	parseEnd(&scope.front()->func.symbols);
 	printSTable(&scope.front()->func.symbols);
 
-	return 0;
+	fclose(yyin);
+	outFile.close();
+
+	return error;
 }

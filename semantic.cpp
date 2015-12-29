@@ -7,7 +7,7 @@ using namespace std;
 
 
 symbol *currScope;
-deque<int> funcArgTypes;
+deque<DataType> funcArgTypes;
 deque<symbol*> funcArgs;
 deque<symbol*> callArgs;
 deque<symbol*> scope;
@@ -22,6 +22,7 @@ void parseEnd(deque<symbol*> *table)
 		{
 			if (!(*id)->func.isDefined)
 			{
+				setError(ESEM, "Declared function not defined");
 				// error - declared func not defined
 			}
 			else 
@@ -116,11 +117,12 @@ void addID(string *name)
 	}
 	else
 	{
+		setError(ESEM, "Variable name already exists");
 		// error - wrong name
 	}
 }
 
-void addTypes(int type)
+void addTypes(DataType type)
 {
 	for (deque<symbol*>::iterator id=currScope->func.symbols.begin(); id!=currScope->func.symbols.end(); ++id)
 	{
@@ -133,7 +135,7 @@ void addTypes(int type)
 
 /* Function */
 
-void addFuncDecl(string *name, int type)
+void addFuncDecl(string *name, DataType type)
 {
 	if (checkID(name) && checkFunc(name))
 	{
@@ -148,19 +150,21 @@ void addFuncDecl(string *name, int type)
 	}
 	else
 	{
+		setError(ESEM, "Function name already exists");
 		// error - wrong name
 	}
 }
 
-void addArgType(int type)
+void addArgType(DataType type)
 {
 	funcArgTypes.push_back(type);
 }
 
-void addFuncDefin(string *name, int type)
+void addFuncDefin(string *name, DataType type)
 {	
 	if (!(checkID(name) && checkFunc(name)))
 	{
+		setError(ESEM, "Function name already exists");
 		// error - wrong name
 	}
 
@@ -185,17 +189,19 @@ void addFuncDefin(string *name, int type)
 
 	if ((*id)->func.isDefined)
 	{
+		setError(ESEM, "Function already defined");
 		// error - already defined
 	}
 
 	if ((*id)->dataType != type)
 	{
+		setError(ESEM, "Function invalid return type");
 		// error - wrong return type
 	}
 
 	if ((*id)->func.argTypes.size() == funcArgs.size())
 	{// check arguments
-		deque<int>::iterator argDecl = (*id)->func.argTypes.begin();
+		deque<DataType>::iterator argDecl = (*id)->func.argTypes.begin();
 		deque<symbol*>::iterator argDefin = funcArgs.begin();
 		while((!(*id)->func.isDefined || argDecl != (*id)->func.argTypes.end()) && argDefin != funcArgs.end())
 		{
@@ -209,12 +215,14 @@ void addFuncDefin(string *name, int type)
 			}
 			else
 			{
+				setError(ESEM, "Function arguments invalid types");
 				// error - wrong types of defined args
 			}
 		}
 	}
 	else
 	{
+		setError(ESEM, "Function arguments invalid number");
 		// error - wrong number of defined args
 	}
 
@@ -226,10 +234,11 @@ void addFuncDefin(string *name, int type)
 	funcArgs.clear();
 }
 
-void addArg(string *name, int type)
+void addArg(string *name, DataType type)
 {
 	if (!checkFunc(name))
 	{
+		setError(ESEM, "Argument name already exists");
 		// error - wrong name
 	}
 
@@ -252,11 +261,13 @@ void addAssign(string *name, symbol* expr)
 
 	if (id == currScope->func.symbols.end())
 	{
+		setError(ESEM, "Variable not declared");
 		// error - not declared
 	}
 
 	if ((*id)->dataType != expr->dataType)
 	{
+		setError(ESEM, "Expression invalid type");
 		// error - wrong assignment type
 	}
 
@@ -274,6 +285,7 @@ symbol* addTmpID(string *name)
 
 	if (id == currScope->func.symbols.end())
 	{
+		setError(ESEM, "Variable not declared");
 		// error - not declared
 	}
 	else
@@ -342,7 +354,8 @@ symbol* addExpr(symbol *expr1, symbol *expr2, int op)
 		case OAND:
 		case OOR:  if (expr1->dataType != DINT || expr2->dataType != DINT)
 				   {
-				   	 // error 
+				   	 	setError(ESEM, "Expression invalid type");
+				   		// error 
 				   }						
 					break;
 		case OLT:
@@ -352,7 +365,8 @@ symbol* addExpr(symbol *expr1, symbol *expr2, int op)
 		case OEQ:  
 		case ONEQ: if (expr1->dataType != expr2->dataType)
 				   {
-				   	 // error
+					 	setError(ESEM, "Expression invalid type");
+						// error
 				   }	
 				   break;
 		default: break;
@@ -375,8 +389,9 @@ symbol* addExpr(symbol *expr1, symbol *expr2, int op)
 
 symbol* addExprNeg(symbol *expr)
 {
-	if (expr->type != DINT)
+	if (expr->dataType != DINT)
 	{
+		setError(ESEM, "Expression invalid type");
 		// error
 	}
 
@@ -393,7 +408,7 @@ symbol* addExprNeg(symbol *expr)
     return s;
 }
 
-symbol* addConvert(symbol *expr, int type)
+symbol* addConvert(symbol *expr, DataType type)
 {
 	if (expr->dataType == type)
 		return expr;
@@ -402,6 +417,7 @@ symbol* addConvert(symbol *expr, int type)
 	    !(expr->dataType == DCHAR && type == DINT) &&
 	    !(expr->dataType == DINT && type == DCHAR))
 	{
+		setError(ESEM, "Expression unsupported conversion");
 		// error - unsupported conversion
  	}
 
@@ -430,6 +446,7 @@ symbol* addFuncCall(string *name)
 
 	if (id == table->end())
 	{
+		setError(ESEM, "Called function not defined");
 		// error - not declared
 		return NULL;
 	}
@@ -451,6 +468,7 @@ symbol* addFuncCall(string *name)
 			}
 			else
 			{
+				setError(ESEM, "Called function invalid arguments types");
 				// error - wrong types of args
 				return NULL;
 			}
@@ -484,6 +502,7 @@ void addCallArg(symbol *arg)
 
 	if (id == currScope->func.symbols.end())
 	{
+		setError(ESEM, "Variable not declared");
 		// error - not declared
 	}
 
@@ -492,7 +511,7 @@ void addCallArg(symbol *arg)
 
 void addReturn(symbol *expr)
 {
-	int type;
+	DataType type;
 
 	if (!expr)
 		type = DVOID;
@@ -501,6 +520,7 @@ void addReturn(symbol *expr)
 
 	if (type != currScope->dataType)
 	{
+		setError(ESEM, "Return invalid type");
 		// error - wrong return type
 	}
 	// add funcs return value ... retval = expr->var.val
@@ -523,6 +543,7 @@ void addIf(symbol *expr)
 {
 	if (expr->dataType != DINT)
 	{
+		setError(ESEM, "IF expression invalid type");
 		// error - if expr
 	}
 	else
@@ -573,6 +594,7 @@ void addWhile(symbol *expr)
 {
 	if (expr->dataType != DINT)
 	{
+		setError(ESEM, "WHILE expression invalid type");
 		// error - if expr
 	}
 	else
