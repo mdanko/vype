@@ -1,32 +1,26 @@
-int identifikator;
-char znak;
-int cislo;
-int cislo2;
-
-char func(int);
-int f(int);
-
-cislo = 5;
-
-cislo2 = (2 * cislo ) + 5;
-
-if (a == 0)
-{ 
-	cislo = 1;
-}
-else
+void dummy (void)
 {
-	cislo = 2;
+	
 }
 
-int f(int a)
-{
-	return 2*a;
-}
+int c;
 
-char func(int a)
-{
-	cislo = 7;
-
-	return (char)(cislo + f(cislo));
-}
+/* Program 1: Vypocet faktorialu (iterativne) */
+int main(void) { // Hlavni telo programu
+  int a, vysl;
+  dummy();
+  a = read_int();
+  if (a < 0) {
+  dummy();
+  }
+  else
+  {
+    vysl = 1;
+    while (a > 0)
+    {
+      vysl = vysl * a;
+      a = a - 1;
+      } // endwhile
+  dummy();
+  } // endi
+} // main

@@ -15,13 +15,15 @@ enum DataType
 
 enum SymType 
 {
-	SID, SFUNC, STEMP
+	SID, SFUNC, STEMP, SIF, SELSE, SWHILE, SRETURN
 };
 
 typedef struct symbol symbol;
 
 struct func_info
 {
+	// var_info retval;  		default vals ... ival = 0, cval = '\0', sval = ""
+	bool isDefined;
 	deque<int> argTypes;
 	deque<symbol*> symbols;
 };
@@ -31,6 +33,7 @@ struct var_info
 	int ival;
 	char cval;
 	string sval;
+	bool isGlobal;
 };
 
 

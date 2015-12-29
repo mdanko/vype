@@ -53,19 +53,24 @@
 %start program
 %%
 
-program : stmts
-		;
+program : declars_defins;
+
+declars_defins : func_decl TSEMICOL declars_defins
+			   | func_def declars_defins
+			   | id_decl TSEMICOL declars_defins
+			   | func_decl TSEMICOL
+			   | func_def
+			   | id_decl TSEMICOL
+			   ;
 
 stmts : stmt 
       | stmts stmt
       ;
 
-stmt : func_decl TSEMICOL
-	 | func_def
+stmt : expr TSEMICOL
 	 | return TSEMICOL
 	 | id_decl TSEMICOL
 	 | assign TSEMICOL
-	 | expr TSEMICOL
 	 | if 
 	 | while
 	 | TSEMICOL
@@ -91,12 +96,13 @@ func_def : data_type TID TLPAR func_def_args TRPAR 			{ addFuncDefin($2, $1); }
 		   block											
 		 ;
 
-func_def_args : data_type TID TCOM func_def_args			{ addArg($2, $1); }
-		  | data_type TID 									{ addArg($2, $1); }
-		  ;
+func_def_args : data_type TID TCOM 							{ addArg($2, $1); }
+				func_def_args			
+		  	  | data_type TID 								{ addArg($2, $1); }
+		 	  ;
 
-return : TKEY_RETURN expr
-	   | TKEY_RETURN
+return : TKEY_RETURN expr 	{ addReturn($2); }
+	   | TKEY_RETURN		{ addReturn(NULL); }
 	   ;
 
 block : TLBRAC 
@@ -110,7 +116,8 @@ id_decl : data_type ids 	{ addTypes($1); }
 		;
 
 ids : TID 					{ addID($1); }
-	| TID TCOM ids			{ addID($1); }
+	| TID 					{ addID($1); }
+	  TCOM ids			
 	;
 
 data_type : TKEY_INT		{ $$ = DINT; }
@@ -140,7 +147,9 @@ expr : expr TOP_PLUS expr	{ $$ = addExpr($1, $3, OPLUS); }
 	 | TOP_NEG expr 		{ $$ = addExprNeg($2); }
 
 	 | TLPAR data_type TRPAR expr 		{ $$ = addConvert($4, $2);}
+
 	 | TID TLPAR func_call_args TRPAR	{ $$ = addFuncCall($1); }
+	 | TID TLPAR TRPAR					{ $$ = addFuncCall($1); }
 
 	 | TID 					{ $$ = addTmpID($1); }
 	 | TINT 				{ $$ = addTmpInt($1); }
@@ -150,14 +159,19 @@ expr : expr TOP_PLUS expr	{ $$ = addExpr($1, $3, OPLUS); }
 	 | TLPAR expr TRPAR		{ $$ = $2; }
 	 ;
 
-func_call_args : expr TCOM func_call_args		{ addCallArg($1); }
+func_call_args : expr TCOM 						{ addCallArg($1); }
+				func_call_args		
 			   | expr 							{ addCallArg($1); }
 			   ;
 
-if : TKEY_IF TLPAR expr TRPAR block TKEY_ELSE block
+if : TKEY_IF TLPAR expr TRPAR 					{ addIf($3); }
+	 block 
+	 TKEY_ELSE 									{ addElse(); }
+	 block
    ;
 
-while : TKEY_WHILE TLPAR expr TRPAR block
+while : TKEY_WHILE TLPAR expr TRPAR				{ addWhile($3); }
+		block
 	  ;
 
 
@@ -181,16 +195,17 @@ int main(int argc, char **argv)
 	else outFile.open(argv[2]);
 
 	extern int yydebug;
-	yydebug = 1;
+	//yydebug = 1;
 	tmpID = 0;
 
 	symbol *global = new symbol;
 	global->name = "@global";
 	scope.push_back(global);
-	sTable = &scope.front()->func.symbols;
+	currScope = scope.front();
 
 	yyparse();
 
+	parseEnd(&scope.front()->func.symbols);
 	printSTable(&scope.front()->func.symbols);
 
 	return 0;

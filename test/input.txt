@@ -5,14 +5,36 @@ int cislo, cislo2;
 char func(int);
 void f(int,char,int);
 
+void dummy(void)
+{}
+
 char func(int a)
 {
-	string message;
+	char c;
+	c = '*';
+	return c;
 }
 
-void f(int a, char z, int b)
+void f(int a, char z, string b)
 {
-	
+	if (a == 0)
+	{
+		z = 'a';
+	}
+	else
+	{
+		z = 'b';
+	}
 }
 
-cislo = cislo2 + 5;
+int main(void)
+{
+	int a1, b1;
+	char z1;
+	string ss;
+
+	f(a1,z1,ss);
+
+	z1 = func(5);
+	dummy();
+}
