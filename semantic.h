@@ -1,3 +1,6 @@
+#ifndef _SEMANTIC_H_
+#define _SEMANTIC_H_
+
 #include <deque>
 #include "table_symbols.h"
 #include "error.h"
@@ -10,7 +13,7 @@ extern deque<symbol*> callArgs;					// args to function call
 extern deque<symbol*> scope;					// nested scopes (global scope in front)
 extern int tmpID;								// id number of temporary variable
 
-void parseEnd(deque<symbol*> *table);
+void parseEnd();
 
 void printSTable(deque<symbol*> *table);
 bool checkID(string *name);
@@ -35,7 +38,7 @@ symbol* addExpr(symbol *oper1, symbol *oper2, int op);
 symbol* addExprNeg(symbol *oper);
 
 symbol* addConvert(symbol *expr, DataType type);
-symbol* addFuncCall(string *name);
+symbol* addFuncCall(string *name, bool isExpr);
 void addCallArg(symbol *arg);
 
 void addReturn(symbol *expr);
@@ -48,3 +51,5 @@ void addElse();
 void addWhile(symbol *expr);
 
 void addLocalVars(symbol *s);
+
+#endif

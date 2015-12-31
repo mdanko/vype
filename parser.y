@@ -1,12 +1,15 @@
+%code requires{
+	#include <string>
+	#include "semantic.h"
+	using namespace std;
+}
+
 %{
 	#include <iostream>
 	#include <fstream>
-	#include <string.h>
 	#include <stdlib.h>
 	#include <stdio.h>
-	#include "semantic.h"
-	using namespace std;
-
+	#include "error.h"
     extern int yylex();
     extern int yyparse();
     extern FILE* yyin;
@@ -53,7 +56,9 @@
 %start program
 %%
 
-program : declars_defins;
+program : declars_defins
+		|
+;
 
 declars_defins : func_decl TSEMICOL declars_defins
 			   | func_def declars_defins
@@ -67,13 +72,13 @@ stmts : stmt
       | stmts stmt
       ;
 
-stmt : expr TSEMICOL
-	 | return TSEMICOL
-	 | id_decl TSEMICOL
+stmt : id_decl TSEMICOL
+	 | TID TLPAR func_call_args TRPAR TSEMICOL	{ addFuncCall($1, false); }
+	 | TID TLPAR TRPAR TSEMICOL					{ addFuncCall($1, false); }
 	 | assign TSEMICOL
+	 | return TSEMICOL
 	 | if 
 	 | while
-	 | TSEMICOL
      ;
 
 func_decl : data_type TID TLPAR func_decl_args TRPAR		{ addFuncDecl($2, $1); }
@@ -82,8 +87,10 @@ func_decl : data_type TID TLPAR func_decl_args TRPAR		{ addFuncDecl($2, $1); }
 		  | TKEY_VOID TID TLPAR TKEY_VOID TRPAR				{ addFuncDecl($2, DVOID); }
           ;
     
-func_decl_args : data_type TCOM func_decl_args				{ addArgType($1); }
+func_decl_args : data_type TCOM								{ addArgType($1); }
+				 func_decl_args
 			   | data_type									{ addArgType($1); }
+
          	   ;
 
 func_def : data_type TID TLPAR func_def_args TRPAR 			{ addFuncDefin($2, $1); }
@@ -148,8 +155,8 @@ expr : expr TOP_PLUS expr	{ $$ = addExpr($1, $3, OPLUS); }
 
 	 | TLPAR data_type TRPAR expr 		{ $$ = addConvert($4, $2);}
 
-	 | TID TLPAR func_call_args TRPAR	{ $$ = addFuncCall($1); }
-	 | TID TLPAR TRPAR					{ $$ = addFuncCall($1); }
+	 | TID TLPAR func_call_args TRPAR	{ $$ = addFuncCall($1, true); }
+	 | TID TLPAR TRPAR					{ $$ = addFuncCall($1, true); }
 
 	 | TID 					{ $$ = addTmpID($1); }
 	 | TINT 				{ $$ = addTmpInt($1); }
@@ -160,7 +167,7 @@ expr : expr TOP_PLUS expr	{ $$ = addExpr($1, $3, OPLUS); }
 	 ;
 
 func_call_args : expr TCOM 						{ addCallArg($1); }
-				func_call_args		
+				 func_call_args		
 			   | expr 							{ addCallArg($1); }
 			   ;
 
@@ -176,52 +183,3 @@ while : TKEY_WHILE TLPAR expr TRPAR				{ addWhile($3); }
 
 
 %%
-int main(int argc, char **argv) 
-{
-	ofstream outFile;
-	error = EOK;
-
-	if (argc < 2 || argc > 3)
-	{
-		setError(EINT, "Wrong number of arguments");
-		return error;
-	}
-
-	if (!(yyin = fopen (argv[1], "r")))
-	{
-		setError(EINT, "Cannot open input file");
-		return error;	
-	}
-
-	if (argc == 2)
-	{
-		outFile.open("out.asm");
-	}
-	else outFile.open(argv[2]);
-
-	if (!outFile)
-	{
-		setError(EINT, "Cannot open output file");
-		fclose(yyin);
-		return error;		
-	}
-
-	extern int yydebug;
-	//yydebug = 1;
-	tmpID = 0;
-
-	symbol *global = new symbol;
-	global->name = "@global";
-	scope.push_back(global);
-	currScope = scope.front();
-
-	yyparse();
-
-	parseEnd(&scope.front()->func.symbols);
-	printSTable(&scope.front()->func.symbols);
-
-	fclose(yyin);
-	outFile.close();
-
-	return error;
-}

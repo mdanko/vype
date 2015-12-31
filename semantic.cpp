@@ -13,9 +13,12 @@ deque<symbol*> callArgs;
 deque<symbol*> scope;
 int tmpID;
 
-void parseEnd(deque<symbol*> *table)
+void parseEnd()
 {
 	bool isMain = false;
+	deque<symbol*> *table;
+	table = &scope.front()->func.symbols;
+
 	for (deque<symbol*>::iterator id=table->begin(); id!=table->end(); ++id)
 	{
 		if ((*id)->type == SFUNC)
@@ -23,20 +26,17 @@ void parseEnd(deque<symbol*> *table)
 			if (!(*id)->func.isDefined)
 			{
 				setError(ESEM, "Declared function not defined");
-				// error - declared func not defined
 			}
 			else 
 			{
 				if ((*id)->name == string("main") && (*id)->dataType == DINT && (*id)->func.argTypes.size() == 0)
 					isMain = true;
-
-				parseEnd(&(*id)->func.symbols);
 			}
 		}
 	}
 
-	if (isMain)
-		cout << "MAIN" << endl;
+	if (!isMain)
+		setError(ESEM, "Main function not declared");
 
 }
 
@@ -170,7 +170,7 @@ void addFuncDefin(string *name, DataType type)
 
 	deque<symbol*>::iterator id = currScope->func.symbols.begin();
 
-  	while (id!=currScope->func.symbols.end() && !((*id)->name == *name && (*id)->type == SFUNC))
+  	while (id!=currScope->func.symbols.end() && (*id)->name != *name)
   		++id;
 
 
@@ -199,33 +199,36 @@ void addFuncDefin(string *name, DataType type)
 		// error - wrong return type
 	}
 
-	if ((*id)->func.argTypes.size() == funcArgs.size())
-	{// check arguments
-		deque<DataType>::iterator argDecl = (*id)->func.argTypes.begin();
-		deque<symbol*>::iterator argDefin = funcArgs.begin();
-		while((!(*id)->func.isDefined || argDecl != (*id)->func.argTypes.end()) && argDefin != funcArgs.end())
-		{
-			if (!(*id)->func.isDefined || *argDecl == (*argDefin)->dataType)
-			{
-				
-				symbol *arg = *argDefin;
-				(*id)->func.symbols.push_back(arg);
-				++argDecl;
-				++argDefin;
-			}
-			else
-			{
-				setError(ESEM, "Function arguments invalid types");
-				// error - wrong types of defined args
+	if ((*id)->func.argTypes.size() != 0 || (*id)->func.isDefined)
+	{
+		if ((*id)->func.argTypes.size() == funcArgs.size())
+		{// check arguments
+			deque<DataType>::iterator argDecl = (*id)->func.argTypes.begin();
+			deque<symbol*>::iterator argDefin = funcArgs.begin();
+
+			while ((argDecl != (*id)->func.argTypes.end()) && argDefin != funcArgs.end())
+			{ 
+				if (*argDecl == (*argDefin)->dataType)
+				{ 
+					symbol *arg = *argDefin; 
+					(*id)->func.symbols.push_back(arg);
+					++argDecl;
+					++argDefin;
+				}
+				else
+				{
+					setError(ESEM, "Function arguments invalid types");
+					break;
+					// error - wrong types of defined args
+				}
 			}
 		}
+		else
+		{
+			setError(ESEM, "Function arguments invalid count");
+			// error - wrong number of defined args
+		}
 	}
-	else
-	{
-		setError(ESEM, "Function arguments invalid number");
-		// error - wrong number of defined args
-	}
-
 	(*id)->func.isDefined = true;
 	
 	symbol *newScope = *id;
@@ -262,7 +265,7 @@ void addAssign(string *name, symbol* expr)
 	if (id == currScope->func.symbols.end())
 	{
 		setError(ESEM, "Variable not declared");
-		// error - not declared
+		return;
 	}
 
 	if ((*id)->dataType != expr->dataType)
@@ -286,7 +289,8 @@ symbol* addTmpID(string *name)
 	if (id == currScope->func.symbols.end())
 	{
 		setError(ESEM, "Variable not declared");
-		// error - not declared
+		symbol *sid = new symbol;
+		return sid;
 	}
 	else
 	{
@@ -434,7 +438,7 @@ symbol* addConvert(symbol *expr, DataType type)
     return s;
 }
 
-symbol* addFuncCall(string *name)
+symbol* addFuncCall(string *name, bool isExpr)
 {
 	deque<symbol*> *table;
 	table = &scope.front()->func.symbols;
@@ -447,32 +451,40 @@ symbol* addFuncCall(string *name)
 	if (id == table->end())
 	{
 		setError(ESEM, "Called function not defined");
-		// error - not declared
-		return NULL;
+		symbol *s = new symbol;
+		return s;
 	}
 
-	if ((*id)->dataType != DVOID)
+	if ((*id)->func.argTypes.size() == callArgs.size())	
 	{ // func with arguments
-		symbol *sid = *id;
+		if ((*id)->func.argTypes.size() != 0)
+		{// check arguments
 
-		deque<symbol*>::iterator argDefin = sid->func.symbols.begin();
-		deque<symbol*>::iterator argCall = callArgs.begin();
+			symbol *sid = *id;
 
-		while(argCall != callArgs.end() && argDefin != (*id)->func.symbols.end())
-		{
-			if ((*argDefin)->dataType == (*argCall)->dataType)
+			deque<symbol*>::iterator argDefin = sid->func.symbols.begin();
+			deque<symbol*>::iterator argCall = callArgs.begin();
+
+			while(argCall != callArgs.end() && argDefin != (*id)->func.symbols.end())
 			{
-				++argDefin;
-				++argCall;
-				// pass values
-			}
-			else
-			{
-				setError(ESEM, "Called function invalid arguments types");
-				// error - wrong types of args
-				return NULL;
+				if ((*argDefin)->dataType == (*argCall)->dataType)
+				{
+					++argDefin;
+					++argCall;
+					// pass values
+				}
+				else
+				{
+					setError(ESEM, "Called function invalid arguments types");
+					break;
+				}
 			}
 		}
+	}
+	else
+	{
+		setError(ESEM, "Function arguments invalid count");
+		// error - wrong number of defined args
 	}
 
 	symbol *s = new symbol;
@@ -483,7 +495,8 @@ symbol* addFuncCall(string *name)
 	s->dataType = (*id)->dataType;
 	//s.var.sval = sval;
 
-	currScope->func.symbols.push_back(s);
+	if (isExpr)
+		currScope->func.symbols.push_back(s);
 
 
 	callArgs.clear();
@@ -546,30 +559,28 @@ void addIf(symbol *expr)
 		setError(ESEM, "IF expression invalid type");
 		// error - if expr
 	}
-	else
-	{
-		symbol *s = new symbol;
-		ostringstream tmpName;
-		tmpName << "@IF" << tmpID;
-		s->name =  tmpName.str();
-		s->type = SIF;
-		s->dataType = DINT;
-		addLocalVars(s);
-		
-		currScope->func.symbols.push_back(s);
 
-		symbol *s2 = new symbol;
-		ostringstream tmpName2;
-		tmpName2 << "@ELSE" << tmpID++;
-		s2->name =  tmpName2.str();
-		s2->type = SELSE;
-		s2->dataType = INIT;
-		addLocalVars(s2);
+	symbol *s = new symbol;
+	ostringstream tmpName;
+	tmpName << "@IF" << tmpID;
+	s->name =  tmpName.str();
+	s->type = SIF;
+	s->dataType = DINT;
+	addLocalVars(s);
+	
+	currScope->func.symbols.push_back(s);
 
-		currScope->func.symbols.push_back(s2);
+	symbol *s2 = new symbol;
+	ostringstream tmpName2;
+	tmpName2 << "@ELSE" << tmpID++;
+	s2->name =  tmpName2.str();
+	s2->type = SELSE;
+	s2->dataType = INIT;
+	addLocalVars(s2);
 
-		addScope(s);
-	}
+	currScope->func.symbols.push_back(s2);
+
+	addScope(s);
 }
 
 void addElse()
@@ -597,18 +608,16 @@ void addWhile(symbol *expr)
 		setError(ESEM, "WHILE expression invalid type");
 		// error - if expr
 	}
-	else
-	{
-		symbol *s = new symbol;
-		ostringstream tmpName;
-		tmpName << "@WHILE" << tmpID++;
-		s->name =  tmpName.str();
-		s->type = SIF;
-		addLocalVars(s);
-		currScope->func.symbols.push_back(s);
 
-		addScope(s);		
-	}
+	symbol *s = new symbol;
+	ostringstream tmpName;
+	tmpName << "@WHILE" << tmpID++;
+	s->name =  tmpName.str();
+	s->type = SIF;
+	addLocalVars(s);
+	currScope->func.symbols.push_back(s);
+
+	addScope(s);		
 }
 
 void addLocalVars(symbol *s)

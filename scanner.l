@@ -1,23 +1,24 @@
+%option noyywrap batch
 %{
 #include <string>
 #include <stdlib.h>
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
-#include "semantic.h"
 #include "parser.tab.h"
 using namespace std;
 
 #define TOKEN(t) (yylval.token = t)
 
-extern "C" int yywrap() { }
-extern "C" int yyerror() {  printf("Error\n");   exit(1); }
-    extern FILE* yyin;
+extern FILE* yyin;
 
 void blockComment();
 void lineComment();
 void count();
 %}
+
+PRINTABLE [\x20-\x21\x23-\x26\x28-\x5b\x5d-\xff] 
+ESCAPE 	  (\\n|\\t|\\\\|\\\"|\\')
 
 %%
 "/*"					{ blockComment(); }
@@ -38,12 +39,12 @@ void count();
 "short"					return TOKEN(TRES_SHORT);
 "unsigned"				return TOKEN(TRES_UNSIGNED);
 
-[ \n\t]                 	;
+[ \n\t\r]+                 	;
 
 [a-zA-Z_][a-zA-Z0-9_]*  { yylval.id = new string(yytext); return TID; }
 [0-9]+                  { yylval.ival = atoi(yytext); return TINT; }
-'(\\.|[^\\'])'			{ yylval.cval = yytext[0]; return TCHAR; }
-\"(\\.|[^\\"])*\"		{ yylval.sval = new string(yytext); return TSTRING; }
+'(\\|\"|{PRINTABLE}|{ESCAPE})'	{ yylval.cval = yytext[0]; return TCHAR; }
+\"({PRINTABLE}|{ESCAPE})*\"		{ yylval.sval = new string(yytext); return TSTRING; }
 "="                     return TOKEN(TASS);
 "=="                    return TOKEN(TOP_EQ);
 "!="                    return TOKEN(TOP_NEQ);
@@ -75,42 +76,39 @@ void blockComment()
 {
 	char c, c1;
 
-loop:
-	while ((c = yyinput()) != '*' && c != 0)
-		putchar(c);
-
-	if ((c1 = yyinput()) != '/' && c != 0)
+	while(1)
 	{
-		unput(c1);
-		goto loop;
-	}
+		while ((c = yyinput()) != '*' && c != 0)
+		{
+			if (c == EOF)
+			{
+				setError(ELEX, "Block comment reached eof");
+				return;
+			}
+			putchar(c); 
+		}
 
-	if (c != 0)
-		putchar(c1);
+		if ((c1 = yyinput()) != '/' && c != 0)
+		{
+			if (c1 == EOF)
+				{
+					setError(ELEX, "Block comment reached eof");
+					return;
+				}
+			unput(c1);
+		}
+
+		if (c != 0)
+			putchar(c1);
+		}
 }
 
 void lineComment()
 {
 	char c;
 
-	while ((c = yyinput()) != '\n' && c != 0)
+	while ((c = yyinput()) != '\n' && c != 0 && c != EOF)
+	{		
 		putchar(c); 
+	}
 }
-
-int column = 0;
-
-void count()
-{
-	int i;
-
-	for (i = 0; yytext[i] != '\0'; i++)
-		if (yytext[i] == '\n')
-			column = 0;
-		else if (yytext[i] == '\t')
-			column += 8 - (column % 8);
-		else
-			column++;
-
-	ECHO;
-}
-

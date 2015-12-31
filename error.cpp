@@ -7,6 +7,7 @@ ErrorCode error = EOK;
 
 void setError(ErrorCode ec, string msg)
 {
-	error = ec;
+	if (error == EOK)
+		error = ec;
 	cout << "ERROR:" << ec<< ":" << msg << "!" << endl;
 }

@@ -1,4 +1,6 @@
-#include <vector>
+#ifndef _TABLE_SYMBOLS_H_
+#define _TABLE_SYMBOLS_H_
+
 #include <deque>
 #include <string>
 using namespace std;
@@ -45,3 +47,5 @@ struct symbol
     var_info var;
     func_info func;
 };
+
+#endif

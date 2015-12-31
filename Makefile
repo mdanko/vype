@@ -18,9 +18,13 @@ semantic.o: semantic.cpp semantic.h table_symbols.h
 error.o: error.cpp error.h
 	g++ -c error.cpp
 
-vype: scanner.o parser.tab.o semantic.o error.o
-	g++ parser.tab.o scanner.o semantic.o error.o -lfl -o vype
+main.o: main.cpp parser.tab.h table_symbols.h error.h
+	c++ -c main.cpp
+
+vype: scanner.o parser.tab.o semantic.o error.o main.o
+	g++ parser.tab.o scanner.o semantic.o error.o main.o -o vype
 
 clean:
 	rm vype parser.tab.c parser.tab.h scanner.cpp
-	rm parser.tab.o scanner.o semantic.o error.o
+	rm parser.tab.o scanner.o semantic.o error.o main.o
+	rm out.asm
