@@ -23,16 +23,16 @@ Label::Label(const string &prefix)
     stream.str("");
 }
 
-Label::Label(Function *f)
+Label::Label(symbol *f)
 {
     std::stringstream stream;
 
-    if (f->id != "main")
+    if (f->name != "main")
     {
         stream << "FUNC_";
     }
 
-    stream << f->id;
+    stream << f->name;
 
     this->id = stream.str();
     stream.str("");
