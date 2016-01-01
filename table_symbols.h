@@ -3,6 +3,7 @@
 
 #include <deque>
 #include <string>
+#include "instruction.h"
 using namespace std;
 
 enum OpType
@@ -28,6 +29,7 @@ struct func_info
 	bool isDefined;
 	deque<DataType> argTypes;
 	deque<symbol*> symbols;
+	InstructionList instructions;
 };
 
 struct var_info

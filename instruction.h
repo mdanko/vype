@@ -12,6 +12,7 @@
 #ifndef _INSTRUCTION_H_
 #define _INSTRUCTION_H_
 
+#include <deque>
 #include <string>
 #include "generator.h"
 #include "error.h"
@@ -20,6 +21,16 @@
 using namespace std;
 
 //////////////////////////////////// label
+
+class Instruction {
+public:
+	virtual ~Instruction() {};
+  	virtual string str() {};
+	virtual string generate(Generator *g){return "";};
+};
+
+typedef deque<Instruction*> InstructionList;
+typedef deque<Instruction*>::iterator InstructionIter;
 
 class Label : public Instruction {
 private:
@@ -30,8 +41,8 @@ public:
 	string str();
 	string generate(Generator* g);
 
-	Label(Function *f);
-  Label(const string &prefix);
+	Label(symbol *f);
+  	fLabel(const string &prefix);
 	Label(const Label &label);
 
 	virtual Instruction* ptr() {
@@ -116,8 +127,8 @@ public:
 
 class CallInst : public Instruction {
 public:
-	Function *fce;
-	list<symbol*> args;
+	symbol *fce;
+	deque<symbol*> args;
 	symbol *result;
 	string str();
 	string generate(Generator* g);

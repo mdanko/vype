@@ -12,6 +12,8 @@ deque<symbol*> funcArgs;
 deque<symbol*> callArgs;
 deque<symbol*> scope;
 int tmpID;
+deque<Label*> currLabel;
+deque<JumpInst*> currJump;
 
 void parseEnd()
 {
@@ -276,13 +278,18 @@ void addAssign(string *name, symbol* expr)
 
 	// add new value from expr to id
 	if ((*id)->dataType == DINT) {
-	
+		(*id)->var.ival = expr->var.ival;
 	} else if ((*id)->dataType == DCHAR) {
-	    
+	    (*id)->var.cval = expr->var.cval;
 	} else if ((*id)->dataType == DSTRING) {
-	    
+	    (*id)->var.sval = expr->var.sval;
 	}
 
+    AssignmentInst *i = new AssignmentInst();
+    i->var = *id;
+    i->result = expr;
+
+    currScope->func.instructions.push_back(s);
 }
 
 /* Expression */
@@ -320,6 +327,11 @@ symbol* addTmpInt(int ival)
 
 	currScope->func.symbols.push_back(s);
 
+	LoadInst *i = new LoadInst();
+	i->result = s;
+
+	currScope->func.instructions.push_back(i);
+
 	return s;
 }
 
@@ -334,6 +346,11 @@ symbol* addTmpChar(char cval)
 	s->var.cval = cval;
 
 	currScope->func.symbols.push_back(s);
+
+	LoadInst *i = new LoadInst();
+	i->result = s;
+
+	currScope->func.instructions.push_back(i);
 
 	return s;
 }
@@ -350,10 +367,15 @@ symbol* addTmpString(string *sval)
 
 	currScope->func.symbols.push_back(s);
 
+	LoadInst *i = new LoadInst();
+	i->result = s;
+
+	currScope->func.instructions.push_back(i);
+
 	return s;
 }
 
-symbol* addExpr(symbol *expr1, symbol *expr2, int op)
+symbol* addExpr(symbol *expr1, symbol *expr2, OpType op)
 {
 	switch(op)
 	{
@@ -395,6 +417,14 @@ symbol* addExpr(symbol *expr1, symbol *expr2, int op)
 
 	currScope->func.symbols.push_back(s);
 
+	// create inst
+	ExpressionInst *i = new ExpressionInst();
+	i->var1 = expr1;
+	i->result = s;
+	i->op = op;
+
+	currScope->func.instructions.push_back(s);
+
     return s;
 }
 
@@ -415,6 +445,14 @@ symbol* addExprNeg(symbol *expr)
 	//s.var.sval = sval;
 
 	currScope->func.symbols.push_back(s);
+
+	// create inst
+	ExpressionInst *i = new ExpressionInst();
+	i->var1 = expr;
+	i->result = s;
+	i->op = ONEG;
+
+	currScope->func.instructions.push_back(s);
 
     return s;
 }
@@ -441,6 +479,12 @@ symbol* addConvert(symbol *expr, DataType type)
 	//s.var.sval = sval;
 
 	currScope->func.symbols.push_back(s);
+
+	// create inst
+	CastInst *i = new CastInst();
+	i->var = expr;
+	i->result = s;
+	i->type = type;
 
     return s;
 }
@@ -505,6 +549,16 @@ symbol* addFuncCall(string *name, bool isExpr)
 	if (isExpr)
 		currScope->func.symbols.push_back(s);
 
+	symbol *sid = *id;
+
+	CallInst *i = new CallInst();
+    i->fce = sid;
+    if (isExpr)
+    	i->result = expr;
+    else i->result = NULL;
+  	i->args = callArgs;
+  
+    inst->push_back(i);  
 
 	callArgs.clear();
 
@@ -543,7 +597,13 @@ void addReturn(symbol *expr)
 		setError(ESEM, "Return invalid type");
 		// error - wrong return type
 	}
-	// add funcs return value ... retval = expr->var.val
+
+	ReturnInst *i = new ReturnInst();
+    if (!expr)
+    	i->result = NULL;
+    else i->result = expr;
+    currScope->func.instructions.push_back(i);
+	
 }
 
 
@@ -588,6 +648,22 @@ void addIf(symbol *expr)
 	currScope->func.symbols.push_back(s2);
 
 	addScope(s);
+
+	Label *middle = new Label("IF_FALSE_");
+    Label *end   = new Label("IF_END_");
+  
+    JumpFalseInst *jumpif = new JumpFalseInst();
+    jumpif->cond = expr;
+    jumpif->label = middle;
+  
+    JumpInst *jump = new JumpInst(); 
+    jump->label = end;
+
+    currScope->func.instructions.push_back(jumpif);
+
+    currJump.push_back(jump);
+    currLabel.push_back(end);
+    currLabel.push_back(middle);
 }
 
 void addElse()
@@ -603,9 +679,24 @@ void addElse()
 			symbol *newScope = *id;
 			addScope(newScope);
 
+		    currScope->func.instructions.push_back(currJump.back());
+		    currScope->func.instructions.push_back(currLabel.back());
+
+		    currLabel.pop_back();
+		    currJump.pop_back();
+
 			return;
 		}
 	}
+}
+
+void ElseEnd()
+{
+	currScope->func.instructions.push_back(currLabel.back());
+
+	currLabel.pop_back();
+
+	leaveScope();
 }
 
 void addWhile(symbol *expr)
@@ -624,7 +715,35 @@ void addWhile(symbol *expr)
 	addLocalVars(s);
 	currScope->func.symbols.push_back(s);
 
-	addScope(s);		
+	addScope(s);	
+
+	Label *start = new Label("WHILE_");
+    Label *end = new Label("WHILE_END_");
+  
+    JumpFalseInst *jumpif = new JumpFalseInst();
+    jumpif->cond = expr;
+    jumpif->label = end;
+  
+    JumpInst *jump = new JumpInst(); 
+    jump->label = start;
+  
+
+    currScope->func.instructions.push_back(start);
+    currScope->func.instructions.push_back(jumpif);	
+
+    currJump.push_back(jump);
+    currLabel.push_back(end);
+}
+
+void addWhileEnd()
+{
+	currScope->func.instructions.push_back(currJump.back());
+   	currScope->func.instructions.push_back(currLabel.back());   
+
+   	currJump.pop_back();
+   	currLabel.pop_back();
+
+   	leaveScope();
 }
 
 void addLocalVars(symbol *s)
