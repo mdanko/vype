@@ -2,7 +2,7 @@
 #define _SEMANTIC_H_
 
 #include <deque>
-#include "table_symbols.h"
+#include "instruction.h"
 #include "error.h"
 using namespace std;
 

@@ -289,7 +289,7 @@ void addAssign(string *name, symbol* expr)
     i->var = *id;
     i->result = expr;
 
-    currScope->func.instructions.push_back(s);
+    currScope->func.instructions.push_back(i);
 }
 
 /* Expression */
@@ -424,7 +424,7 @@ symbol* addExpr(symbol *expr1, symbol *expr2, OpType op)
 	i->result = s;
 	i->op = op;
 
-	currScope->func.instructions.push_back(s);
+	currScope->func.instructions.push_back(i);
 
     return s;
 }
@@ -453,7 +453,7 @@ symbol* addExprNeg(symbol *expr)
 	i->result = s;
 	i->op = ONEG;
 
-	currScope->func.instructions.push_back(s);
+	currScope->func.instructions.push_back(i);
 
     return s;
 }
@@ -486,6 +486,8 @@ symbol* addConvert(symbol *expr, DataType type)
 	i->var = expr;
 	i->result = s;
 	i->type = type;
+
+	currScope->func.instructions.push_back(i);
 
     return s;
 }
@@ -545,7 +547,6 @@ symbol* addFuncCall(string *name, bool isExpr)
 	s->name =  tmpName.str();
 	s->type = STEMP;
 	s->dataType = (*id)->dataType;
-	//s.var.sval = sval;
 
 	if (isExpr)
 		currScope->func.symbols.push_back(s);
@@ -555,11 +556,11 @@ symbol* addFuncCall(string *name, bool isExpr)
 	CallInst *i = new CallInst();
     i->fce = sid;
     if (isExpr)
-    	i->result = expr;
+    	i->result = s;
     else i->result = NULL;
   	i->args = callArgs;
   
-    inst->push_back(i);  
+    currScope->func.instructions.push_back(i); 
 
 	callArgs.clear();
 

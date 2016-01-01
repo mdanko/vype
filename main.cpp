@@ -53,7 +53,14 @@ int main(int argc, char **argv)
 	yyparse();
 
 	parseEnd();
-	printSTable(&scope.front()->func.symbols);
+	//printSTable(&scope.front()->func.symbols);
+
+	if (error == EOK)
+    { 
+		Generator generator;
+		string mips = generator.run(&scope.front()->func.symbols);
+		outFile << mips;
+    }
 
 	fclose(yyin);
 	outFile.close();

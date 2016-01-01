@@ -12,10 +12,11 @@
 #ifndef GENERATOR_H
 #define	GENERATOR_H
 
+#include <map>
 #include <string>
 #include <typeinfo>
+#include <sstream>
 #include "table_symbols.h"
-#include "error.h"
 
 using namespace std;
 
@@ -35,12 +36,12 @@ class Generator
 {
 public:
     Generator();
-    //string run(FunctionTable &functions);
+    string run(deque<symbol*> *table);
     Stack stack;
     map<symbol*, string> address_table;
     string data;
     unsigned data_counter;
-    string allocateVariables(list<VariableTable*> var_table);
+    string allocateVariables(deque<symbol*> *table);
 
     //	isAddressable(Instruction i);
 
