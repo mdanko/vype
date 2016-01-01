@@ -420,6 +420,7 @@ symbol* addExpr(symbol *expr1, symbol *expr2, OpType op)
 	// create inst
 	ExpressionInst *i = new ExpressionInst();
 	i->var1 = expr1;
+	i->var2 = expr2;
 	i->result = s;
 	i->op = op;
 
