@@ -1,9 +1,9 @@
 /*
- * Project: VYPe 2014
+ * Project: VYPe 2015
  *
  * Authors: 
- *   Vendula Poncová, xponco00
- *   Martin Šifra, xsifra00
+ *
+ *
  * 
  * File: instruction.h
  * Classes for instructions of three address code.

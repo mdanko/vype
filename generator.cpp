@@ -1,9 +1,9 @@
 /*
- * Project: VYPe 2014
+ * Project: VYPe 2015
  *
  * Authors: 
- *   Vendula Poncová, xponco00
- *   Martin Šifra, xsifra00
+ * 
+ * 
  * 
  * File: generator.cpp
  * Generate assembly.
@@ -91,20 +91,20 @@ string Generator::allocateVariables(list<VariableTable*> variables)
     {
         VariableTable &variables = **i;
 
-        for (map<string, Variable*>::iterator j = variables.symtable.begin(); j != variables.symtable.end(); ++j)
+        for (map<string, symbol*>::iterator j = variables.symtable.begin(); j != variables.symtable.end(); ++j)
         {
-            Variable &variable = *(j->second);
+            symbol &variable = *(j->second);
 
             int offset = stack.sp - stack.fp;
             ss.str("");
             ss << offset << "($fp)";
             address_table.insert(make_pair(&variable, ss.str()));
 
-            if (variable.type == Symtable::TINT || variable.type == Symtable::TSTRING)
+            if (variable.type == DINT || variable.type == DSTRING)
             {
                 stack.push(4); // 4B
             }
-            else if (variable.type == Symtable::TCHAR)
+            else if (variable.type == DCHAR)
             {
                 stack.push(1); // 1B
             }

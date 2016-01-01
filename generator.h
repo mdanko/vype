@@ -1,9 +1,9 @@
 /*
- * Project: VYPe 2014
+ * Project: VYPe 2015
  *
  * Authors: 
- *   Vendula Poncová, xponco00
- *   Martin Šifra, xsifra00
+ *
+ *
  * 
  * File: generator.h
  * Generate assembly.
@@ -14,7 +14,7 @@
 
 #include <string>
 #include <typeinfo>
-#include "symtable.h"
+#include "table_symbols.h"
 #include "error.h"
 
 using namespace std;
@@ -37,7 +37,7 @@ public:
     Generator();
     string run(FunctionTable &functions);
     Stack stack;
-    map<Variable*, string> address_table;
+    map<symbol*, string> address_table;
     string data;
     unsigned data_counter;
     string allocateVariables(list<VariableTable*> var_table);
