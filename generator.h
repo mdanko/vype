@@ -35,7 +35,7 @@ class Generator
 {
 public:
     Generator();
-    string run(FunctionTable &functions);
+    //string run(FunctionTable &functions);
     Stack stack;
     map<symbol*, string> address_table;
     string data;

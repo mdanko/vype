@@ -93,13 +93,13 @@ func_decl_args : data_type TCOM								{ addArgType($1); }
          	   ;
 
 func_def : data_type TID TLPAR func_def_args TRPAR 			{ addFuncDefin($2, $1); }
-		   block											
+		   block											{ leaveScope(); }
 		 | data_type TID TLPAR TKEY_VOID TRPAR				{ addFuncDefin($2, $1); }
-		   block											
+		   block											{ leaveScope(); }
 		 | TKEY_VOID TID TLPAR func_def_args TRPAR			{ addFuncDefin($2, DVOID); }
-		   block 											
+		   block 											{ leaveScope(); }
 		 | TKEY_VOID TID TLPAR TKEY_VOID TRPAR				{ addFuncDefin($2, DVOID); }
-		   block											
+		   block											{ leaveScope(); }
 		 ;
 
 func_def_args : data_type TID TCOM 							{ addArg($2, $1); }
@@ -113,9 +113,9 @@ return : TKEY_RETURN expr 	{ addReturn($2); }
 
 block : TLBRAC 
 		stmts 
-		TRBRAC				{ leaveScope(); }		
+		TRBRAC				
       | TLBRAC 
-        TRBRAC				{ leaveScope(); }
+        TRBRAC				
       ;
 
 id_decl : data_type ids 	{ addTypes($1); }
@@ -171,13 +171,13 @@ func_call_args : expr TCOM 						{ addCallArg($1); }
 			   ;
 
 if : TKEY_IF TLPAR expr TRPAR 					{ addIf($3); }
-	 block 
+	 block 										{ leaveScope(); }
 	 TKEY_ELSE 									{ addElse(); }
 	 block
    ;
 
 while : TKEY_WHILE TLPAR expr TRPAR				{ addWhile($3); }
-		block
+		block									{ addWhileEnd(); }
 	  ;
 
 

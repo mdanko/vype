@@ -34,7 +34,7 @@ symbol* addTmpInt(int ival);
 symbol* addTmpChar(char cval);
 symbol* addTmpString(string *sval);
 
-symbol* addExpr(symbol *oper1, symbol *oper2, int op);
+symbol* addExpr(symbol *oper1, symbol *oper2, OpType op);
 symbol* addExprNeg(symbol *oper);
 
 symbol* addConvert(symbol *expr, DataType type);
@@ -48,7 +48,9 @@ void leaveScope();
 
 void addIf(symbol *expr);
 void addElse();
+void addElseEnd();
 void addWhile(symbol *expr);
+void addWhileEnd();
 
 void addLocalVars(symbol *s);
 
