@@ -26,3 +26,7 @@
 *.exe
 *.out
 *.app
+/parser.tab.c
+/parser.tab.h
+/scanner.cpp
+/nbproject/

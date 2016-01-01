@@ -11,7 +11,6 @@
 	#include <stdio.h>
 	#include "error.h"
     extern int yylex();
-    extern int yyparse();
     extern FILE* yyin;
 
     extern int yylineno;

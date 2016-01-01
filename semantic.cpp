@@ -275,6 +275,13 @@ void addAssign(string *name, symbol* expr)
 	}
 
 	// add new value from expr to id
+	if ((*id)->dataType == DINT) {
+	
+	} else if ((*id)->dataType == DCHAR) {
+	    
+	} else if ((*id)->dataType == DSTRING) {
+	    
+	}
 
 }
 

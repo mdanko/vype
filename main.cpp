@@ -41,6 +41,7 @@ int main(int argc, char **argv)
 	}
 
 	extern int yydebug;
+	extern int yyparse();
 	//yydebug = 1;
 	tmpID = 0;
 
