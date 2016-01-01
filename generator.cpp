@@ -10,6 +10,7 @@
  */
 
 #include "generator.h"
+#include <iostream>
 
 Stack::Stack(unsigned size) {
     this->size = size;
@@ -54,8 +55,8 @@ string Generator::run(deque<symbol*> *table) {
 	    stack.fp = stack.size;
 	    stack.sp = stack.size;
 
-	    func_info &f = *(i->func);
-	    allocateVariables(f->symbols);
+	    func_info &f = (*i)->func;
+	    allocateVariables(&(f.symbols));
 
 //	    	    for (list<Instruction*>::iterator j = f.instructions.begin(); j != f.instructions.end(); ++j) {
 //	    		func << string((*j)->generate(this));
@@ -87,9 +88,9 @@ string Generator::allocateVariables(deque<symbol*> *table) {
 	    ss << offset << "($fp)";
 //	    address_table.insert(make_pair(&variable, ss.str()));
             
-	    if (v->dataType == DINT || v->dataType == DSTRING) {
+	    if ((*v)->dataType == DINT || (*v)->dataType == DSTRING) {
 		stack.push(4); // 4B
-	    } else if (v->dataType == DCHAR) {
+	    } else if ((*v)->dataType == DCHAR) {
 		stack.push(1); // 1B
 	    }
         }

@@ -65,11 +65,11 @@ string ExpressionInst::str()
 
     if (op == ONEG)
     {
-        stream << result->id << " = " << Symtable::str(op) << " " << var1->id;
+        stream << result->name << " = " << OSTR[op] << " " << var1->name;
     }
     else
     {
-        stream << result->id << " = " << var1->id << " " << Symtable::str(op) << " " << var2->id;
+        stream << result->name << " = " << var1->name << " " << OSTR[op] << " " << var2->name;
     }
 
     return stream.str();
@@ -291,7 +291,7 @@ string ExpressionInst::generate(Generator* g)
 string CastInst::str()
 {
     std::stringstream stream;
-    stream << result->id << " = (" << Symtable::str(type) << ") " << var->id;
+    stream << result->name << " = (" << DSTR[type] << ") " << var->name;
     return stream.str();
 }
 
@@ -307,7 +307,7 @@ string CastInst::generate(Generator * g)
 string LoadInst::str()
 {
     stringstream stream;
-    stream << result->id << " = " << Symtable::str(result->type);
+    stream << result->name << " = " << DSTR[result->dataType];
     return stream.str();
 }
 
@@ -316,27 +316,27 @@ string LoadInst::generate(Generator * g)
     stringstream data, mips;
     string address = (g->address_table.find(result))->second;
 
-    if (result->type == Symtable::TINT)
+    if (result->dataType == DINT)
     {
         data << "const_" << g->data_counter << ":" <<
-                "\t" << ".word " << result->ival << endl;
+                "\t" << ".word " << result->var.ival << endl;
 
         mips << "la $7, const_" << g->data_counter << " // Load int" << endl <<
                 "lw $3, ($7)" << endl <<
                 "sw $3, " << address << endl;
     }
-    else if (result->type == Symtable::TCHAR)
+    else if (result->dataType == DCHAR)
     {
         data << "const_" << g->data_counter << ":\t" <<
-                ".byte " << result->sval << endl;
+                ".byte " << result->var.sval << endl;
 
         mips << "la $3, const_" << g->data_counter << " // Load char" << endl <<
                 "lb $3, ($7)" << endl <<
                 "sb $3, " << address << endl;
     }
-    else if (result->type == Symtable::TSTRING)
+    else if (result->dataType == DSTRING)
     {
-        string sval = result->sval;
+        string sval = result->var.sval;
         sval.erase(0, 1);
         sval.erase(sval.size() - 1);
 
@@ -358,7 +358,7 @@ string LoadInst::generate(Generator * g)
 string AssignmentInst::str()
 {
     std::stringstream stream;
-    stream << result->id << " = " << var->id;
+    stream << result->name << " = " << var->name;
     return stream.str();
 }
 
@@ -369,12 +369,12 @@ string AssignmentInst::generate(Generator * g)
     var1 = (g->address_table.find(var))->second;
     res = (g->address_table.find(var))->second;
 
-    if (result->type == Symtable::TINT || result->type == Symtable::TSTRING)
+    if (result->dataType == DINT || result->dataType == DSTRING)
     {
-        mips << "lw $3, " << var1 << " // Assign " << Symtable::str(g->address_table.find(var)->first->type) << endl <<
+        mips << "lw $3, " << var1 << " // Assign " << DSTR[g->address_table.find(var)->first->dataType] << endl <<
                 "sw $3, " << res << endl;
     }
-    else if (result->type == Symtable::TCHAR)
+    else if (result->dataType == DCHAR)
     {
         mips << "lb $3, " << var1 << " // Assign char" << endl <<
                 "sb $3, " << res << endl;
@@ -404,7 +404,7 @@ string JumpInst::generate(Generator * generator)
 string JumpFalseInst::str()
 {
     std::stringstream stream;
-    stream << "if not " << cond->id << " jump to " << label->id;
+    stream << "if not " << cond->name << " jump to " << label->id;
     return stream.str();
 }
 
@@ -423,13 +423,13 @@ string CallInst::str()
 
     if (result)
     {
-        stream << result->id << " = ";
+        stream << result->name << " = ";
     }
 
-    stream << fce->id << "(";
+    stream << fce->name << "(";
 
     bool first = true;
-    for (list<Variable*>::iterator i = args.begin(); i != args.end(); ++i)
+    for (deque<symbol*>::iterator i = args.begin(); i != args.end(); ++i)
     {
 
         if (!first)
@@ -437,7 +437,7 @@ string CallInst::str()
             stream << ", ";
         }
 
-        stream << (*i)->id;
+        stream << (*i)->name;
         first = false;
     }
 
@@ -449,31 +449,31 @@ string CallInst::generate(Generator * g)
 { // a = func(b,c)
     stringstream mips;
 
-    if (fce->id == "print")
+    if (fce->name == "print")
     {
-        for (list<Variable*>::iterator i = args.begin(); i != args.end(); ++i)
+        for (deque<symbol*>::iterator i = args.begin(); i != args.end(); ++i)
         {
-            Variable* var = *i;
+            symbol* var = *i;
             string address = g->address_table.find(var)->second;
 
-            if (var->type == Symtable::TINT)
+            if (var->dataType == DINT)
             {
                 mips << "lw $9, " << address << "" << endl <<
                         "print_int $9" << endl;
             }
-            else if (var->type == Symtable::TCHAR)
+            else if (var->dataType == DCHAR)
             {
                 mips << "lb $9, " << address << "" << endl <<
                         "print_char $9" << endl;
             }
-            else if (var->type == Symtable::TSTRING)
+            else if (var->dataType == DSTRING)
             {
                 mips << "lw $9, " << address << "" << endl <<
                         "print_string $9" << endl;
             }
         }
     }
-    else if (fce->id == "main")
+    else if (fce->name == "main")
     {
         mips << g->stack.push(4); // Allocate 4B for $ra
         mips << "sw $ra, ($fp)" << endl; // Store $ra to stack
@@ -481,7 +481,7 @@ string CallInst::generate(Generator * g)
     else
     {
         // Jump s tím, že musím uložit na zásobník SP a FP a takové ty srandy.
-        mips << "jal " << fce->id << " // Call" << endl;
+        mips << "jal " << fce->name << " // Call" << endl;
         mips << g->stack.push(4); // Allocate 4B for $ra
         mips << "sw $ra, ($sp)" << endl; // Store $ra to stack
     }
@@ -503,7 +503,7 @@ string ReturnInst::str()
 
     if (result != NULL)
     {
-        stream << " " << result->id;
+        stream << " " << result->name;
     }
 
     return stream.str();

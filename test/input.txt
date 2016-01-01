@@ -5,5 +5,5 @@ string f (int a, char b, string s) {
 }
 
 int main (void) {
-  print(f(1,'a', 'a'));
+  f(1,'a', "a");
 }

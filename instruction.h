@@ -15,8 +15,6 @@
 #include <deque>
 #include <string>
 #include "generator.h"
-#include "error.h"
-#include "table_symbols.h"
 
 using namespace std;
 
@@ -29,9 +27,6 @@ public:
 	virtual string generate(Generator *g){return "";};
 };
 
-typedef deque<Instruction*> InstructionList;
-typedef deque<Instruction*>::iterator InstructionIter;
-
 class Label : public Instruction {
 private:
 	static int maxid;
@@ -42,7 +37,7 @@ public:
 	string generate(Generator* g);
 
 	Label(symbol *f);
-  	fLabel(const string &prefix);
+  	Label(const string &prefix);
 	Label(const Label &label);
 
 	virtual Instruction* ptr() {

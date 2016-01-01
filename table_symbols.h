@@ -3,18 +3,23 @@
 
 #include <deque>
 #include <string>
-#include "instruction.h"
 using namespace std;
+
+class Instruction;
 
 enum OpType
 {
 	OPLUS, OMINUS, OMUL, ODIV, OMOD, OAND, OOR, OEQ, ONEQ, OLT, OLTE, OGT, OGTE, ONEG
 };
 
+static const string OSTR[] = {"+", "-", "*", "/", "%", "<", "<=", ">", ">=", "==", "!=", "&&", "||", "!"};
+
 enum DataType 
 {
 	INIT, DVOID, DINT, DCHAR, DSTRING
 };
+
+static const string DSTR[] = {"void", "int", "char", "string"};
 
 enum SymType 
 {
@@ -23,14 +28,8 @@ enum SymType
 
 typedef struct symbol symbol;
 
-struct func_info
-{
-	// var_info retval;  		default vals ... ival = 0, cval = '\0', sval = ""
-	bool isDefined;
-	deque<DataType> argTypes;
-	deque<symbol*> symbols;
-	InstructionList instructions;
-};
+typedef deque<Instruction*> InstructionList;
+typedef deque<Instruction*>::iterator InstructionIter;
 
 struct var_info
 {
@@ -40,6 +39,14 @@ struct var_info
 	bool isGlobal;
 };
 
+struct func_info
+{
+	var_info retval;  		//default vals ... ival = 0, cval = '\0', sval = ""
+	bool isDefined;
+	deque<DataType> argTypes;
+	deque<symbol*> symbols;
+	InstructionList instructions;
+};
 
 struct symbol
 {

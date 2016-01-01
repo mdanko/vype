@@ -9,5 +9,5 @@ void setError(ErrorCode ec, string msg)
 {
 	if (error == EOK)
 		error = ec;
-	cerr << "ERROR:" << ec<< ":" << msg << "!" << endl;
+	cout << "ERROR:" << ec<< ":" << msg << "!" << endl;
 }
