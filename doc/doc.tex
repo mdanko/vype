@@ -1,5 +1,4 @@
-\documentclass[a4paper, 11pt, titlepage, final]{article}[3. prosinec 2011]
-
+\documentclass[a4paper, 11pt, titlepage, final]{article}
 \newcommand{\LT}{$<$}
 \newcommand{\GT}{$>$}
 
@@ -12,8 +11,8 @@
 
 \newcommand{\url}[1]{\textit{#1}}
 
-\title{Documentation for VYPe}
-\author{Vendula Poncová}
+\title{Documentation for VYPe 2015}
+\author{Martin Å ifra}
 \date{\today}
 
 \begin{document}
@@ -30,11 +29,11 @@ Brno University of Technology}}
 
 \vspace{\stretch{0.191}}
 
-{\centering\includegraphics[height=5cm]{img/logo.eps}}
+{\centering\includegraphics[width=175mm]{img/logo.png}}
 
 \vspace{\stretch{0.191}}
 
-{{\Huge Documentation for VYPe}} \bigskip
+{{\Huge Documentation for VYPe 2015}} \bigskip
 
 \vspace{\stretch{0.618}}
 
@@ -42,8 +41,8 @@ Brno University of Technology}}
 
 {\Large
 \begin{tabular}{lll}
-  Vendula Poncová & \texttt{xponco00} & 75\% \\
-  Martin ©ifra & \texttt{xsifra00} & 25\% \\
+Michal Danko & \texttt{xdanko02} & XX\% \\
+Martin \v{S}ifra & \texttt{xsifra00} & YY\% \\
 \end{tabular}
 }{\Large \hfill \today}
 
@@ -60,75 +59,57 @@ Brno University of Technology}}
 %------------------------------------------------------------------------
 \section{Introduction}
 
-In this documentation, we describe the design and implementation of the compiler of the programming language \texttt{VYPe2014}.
+The documentation describes design and implementation of our solution of the compiler of \texttt{VYPe2015} programming language for processor \texttt{MIPS32-Lissom}. 
 
 %------------------------------------------------------------------------
 \section{Lexer and parser}
 
-As the front part of our compiler, we have used tools \texttt{flex 2.5.35} and \texttt{bison 2.5}. We were going to implement the compiler in \texttt{C++}, thus we have worked with \texttt{C++} interface in \texttt{bison}. However, \texttt{flex} does not support \texttt{C++} very well, so we have used \texttt{C} interface. The current version of bison is \texttt{3.0.2}, but \texttt{merlin} does not support it.
+To save time and work we've used tools \texttt{flex} as a lexical analyser generator and \texttt{GNU Bison} as a parser generator. Everything is implemented in \texttt{C\\C++}.
 
-Lexical analyser is described in file \texttt{lexer.l}, where we define the regular expressions of lexems for \texttt{VYPe2014}. The most challenging were expressions for string and character literals and skipping the comment. For comments, we use state \texttt{COMMENT}, that allows us to ignore characters until we reach the end of the comment. For string and character literals, we explicitly enumerate allowed \texttt{ASCII} codes and escape characters.
+Lexical analyser is described in a file \texttt{scanner.l} with regular expressions of lexems of \texttt{VYPe2015} source language.
 
-Syntax analyser is defined in file \texttt{parser.yy}, where there are definitions of tokens and grammar rules with actions. We have  implemented no extension, thus it was not difficult to design the grammar. The description of the grammar can be found at the page \pageref{grammar}. We skiped the rules for expression.
+Syntax analyser is defined in a file \texttt{parser.y} with definitions of tokens and grammar rules with handlers -- custom functions for every rule for generating intermediate code. We have implemented extension \texttt{GLOBAL} for possibility of global defined variables. The complete grammar in extended Backus-Naur form is in appendix on page \pageref{grammar} (rules for expression are skipped).
 
 %------------------------------------------------------------------------
 \section{Compiler and generator}
 
 \subsection{Symbol table}
 
-Our symbol table consists of a table of functions and tables of variables. Every function holds a list of tables of local variables. In this way, we can deal with overlapping variable names in nested blocks of statements. We use an auxiliary stack, where we push or pop the pointers to variable tables, when we enter or leave a block of statements. When we need to check if the variable was already defined, we search the tables in the stack from top to down. If there is a variable that overlaps with another variable, we will find the one in the most nested block.
+Symbol table contains all variables and functions with other child symbol tables (structure \texttt{deque<symbol*> *table}). This was the easiest way, how to deal with overlapping variable names in nested blocks of statements.
 
-Variables in a variable table hold their name, type and sometimes their value. Functions holds their identifier, list of variables, that are parameters, instructions of three-address code and two flags. One flag symbolizes that the function was declared but not defined, second flag symbolizes, that the function is built-in.
+Because functions and variables are in the same structure, they are recognized by symbol's attribute \texttt{type}. Functions have their own data in attribute \texttt{func} and variables in \texttt{var}. Shared is only name attribute.
 
-We use the symbol table for semantic analyses. After the semantic error, we always recover and continue with the compilation.
+As was said functions and block have nested symbol tables and instructions list, which are used as thee-address code to generate final assembler.
 
 \subsection{Three-address code}
 
-In the syntax analyser, we create three-address code from parse tree. The code is represented by a list of simple instructions. We use several types of instructions. Instruction label represents a place in a code, where we can jump. Instruction expression represents an arithmetical or logical operation between two variables, where the result of the operation is stored in the third variable. For these result variables we generate temporal variables. Cast instruction represents a cast of the variable to another type. There are mentioned three ways of casting in the assignment, however, in the example is also a cast from integer to integer, so we accept a cast to same type as the type of variable as well. Load instruction allows to save a constant value into a variable. Assignment instruction assigns a value from one variable to another. Jump instruction jumps to a label, jump-if-false instruction jumps to label, if the variable is false. Call instruction calls a function with some parameters and stores the result into a temporal variable. Return instruction returns a value of a variable and exits the function.
+In parser's handlers our compiler generate list of instruction from each rule. In this place are also generated labels for jumping in loops and functions. Every instruction is represented by child of \texttt{Instruction} class. There are instructions representing cast, assignment, arithmetical  and logical operations between variables where the result is set to temporary variable (we do not optimize operations). 
 
 \subsection{Generating assembly}
 
-Assembly is generated from the tree-address code. We had to implement our own stack, so we can call functions. The target code starts at the function main, pushes all local variables of main on the stack and runs the instructions of the main function. If another function is called, we push the parameters, the value of instruction pointer and the value of context pointer on the stack, set the context pointer on the top of stack and jump to the function. The function pushed all local variables on the stack and set parameters with the values on the stack. When the function returns, it sets the top of the stack to the value of the current context pointer, restores the context pointer and instruction pointer, pushes the result on the stack and jumps back to the caller.
+From three-address code is generated final assembly code. because MIPS has not a stack, we have to implement our own stack simulation, to be able to call functions and block with their own scope variables. In the begging, there is a reserved part of memory used as stack. The generator then has to remember the addresses of each variable and put the address directly in assembled code. He has also simulate instruction and stack pointers, to know where to return back from nested blocks and functions.   
 
-One of the problems of generating target code was storing strings. However, we have noticed, that string cannot be ever modified. Therefore, we can store string variables as pointers to strings and when we assign one string variable to another, we just set the pointer. Variables set to string literal can just point to a constant defined in a memory. String parameters can be passed by reference. The only exception is the return value of the called function. When the function returns string, it has to be copied to the stack, so it will not be lost, when we pop the context.
-
+For storing constants as chars, strings and integers we use \texttt{.data} directive because these data can not be modified in future.
 
 \subsection{Implementation}
 
-We have implemented the compiler in \texttt{C++}.
-
-Errors are handled in a file \texttt{error.cpp}, where there are defined macros for errors and debugging. The first error code is stored in a static variable and returned as the return value of our program.
-
-Symbol table is implemented in a file \texttt{symtable.cpp}. There are defined classes \texttt{Variable}, \texttt{VariableTable}, \texttt{Function}, \texttt{FunctionTable} and \texttt{SymbolTable} and two enums \texttt{Type} and \texttt{Operation}. The variable and function tables are implemented as maps from the library \texttt{std}.
-
-Classes representing the three-address instructions are defined in a file \texttt{instruction.cpp}. All instructions inherits from class \texttt{Instruction}. Every instruction has implemented a method \texttt{generate}, that returns a string with generated assembly code.
-
-The parsing is driven by a class \texttt{Driver} from file \texttt{driver.cpp}. Driver runs the parsing, generate the three address code and works with a symbol table. The instance of this class is a parameter of the parser and the lexer, thus they can use methods from this class.
-
-If the parsing is finished with success, we call the \texttt{Generator} from file \texttt{generator.cpp}, that accepts the output file and a symbol table of functions and generates assembly. As we mentioned before, most of the generating is defined in a file with instructions.
-
-The program starts in a file \texttt{vype.cpp}. It processes parameters, runs driver and generator and returns a return value.
+The compiler is implemented in \texttt{C\\C++} language.
 
 %------------------------------------------------
 \section{Running the program}
 
-The program can be compiled by command \texttt{make}. It creats the file \texttt{vype} as required.
+The program can be compiled by command \texttt{make}. It generates a binary file \texttt{vype} as required.
 
-We have written a testing script in \texttt{Python 3.2} and prepared about 80 tests in a folder \texttt{test}. The command \texttt{make test} will run all the tests and show the results. 
 
 %------------------------------------------------------------------------
 \section{Division of work}
 
-
-
 \begin{tabular}{ll}\\
-Vendula Poncová & lexical analyser \\
+Michal Danko & lexical analyser \\
                 & syntax analyser \\
-                & three-address code \\
-                & compilation driver \\
+                & three-address code \medskip \\
+Martin \v{S}ifra    & code generator\\
                 & documentation \\
-                & tests \medskip \\
-Martin ©ifra    & code generator\\
 \end{tabular}
 \par
 
@@ -136,11 +117,10 @@ Martin ©ifra    & code generator\\
 %------------------------------------------------------------------------
 \section{Summary}
 
-We have implemented the compiler for the programming language \texttt{VYPe2014}. For lexical and syntax analysis, we have used \texttt{flex} and \texttt{bison}. Compiler and generator are implemented in \texttt{C++}.
+We have implemented the compiler for the programming language \texttt{VYPe2015}. For lexical and syntax analysis, we have used \texttt{flex} and \texttt{bison} tools. Compiler and generator are implemented in \texttt{C\\C++}.
 
 \newpage
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% pøílohy
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  Appendix
 
 \appendix
 
@@ -157,4 +137,3 @@ We have implemented the compiler for the programming language \texttt{VYPe2014}.
 %------------------------------------------------------------------------
 \end{document}
 
-% konec souboru dokumentace.tex
