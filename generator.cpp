@@ -58,13 +58,13 @@ string Generator::run(deque<symbol*> *table) {
 	    func_info &f = (*i)->func;
 	    allocateVariables(&(f.symbols));
 
-//	    	    for (list<Instruction*>::iterator j = f.instructions.begin(); j != f.instructions.end(); ++j) {
-//	    		func << string((*j)->generate(this));
-//	    
-//	    		if (i->name == "main") {
-//	    		    func << "jr $ra // Return" << endl;
-//	    		}
-//	    	    }
+                for (deque<Instruction*>::iterator j = f.instructions.begin(); j != f.instructions.end(); ++j) {
+                    func << string((*j)->generate(this));
+
+                    if ((*i)->name == "main") {
+                        func << "jr $ra // Return" << endl;
+                    }
+                }
 	}
     }
 
